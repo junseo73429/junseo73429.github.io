@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>박준서 | 국민대학교 경영정보학부</title>
+<style>
+:root{--bg:#f7f8fc;--card:#fff;--text:#1c2333;--sub:#5b6478;--accent:#2f5bea;--line:#e3e7f1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1320;--card:#181d2e;--text:#eef1fa;--sub:#a3acc4;--accent:#7f9bff;--line:#262d45}}
+:root[data-theme="dark"]{--bg:#0f1320;--card:#181d2e;--text:#eef1fa;--sub:#a3acc4;--accent:#7f9bff;--line:#262d45}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.7}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--card);border-bottom:1px solid var(--line);z-index:5}
+nav{max-width:880px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:14px 20px}
+nav b{color:var(--accent)}
+nav a{color:var(--sub);text-decoration:none;margin-left:18px;font-size:.95rem}
+nav a:hover{color:var(--accent)}
+main{max-width:880px;margin:auto;padding:0 20px 60px}
+.hero{padding:72px 0 48px}
+.tag{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:4px 14px;font-size:.85rem}
+h1{font-size:clamp(2.2rem,7vw,3.4rem);margin:16px 0 8px;line-height:1.2}
+.hero p{color:var(--sub);font-size:1.1rem;max-width:560px}
+section{margin-top:44px}
+h2{font-size:1.4rem;margin-bottom:16px;padding-left:12px;border-left:4px solid var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card h3{font-size:1.05rem;margin-bottom:6px}
+.card p{color:var(--sub);font-size:.95rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.92rem}
+footer{text-align:center;color:var(--sub);font-size:.85rem;padding:24px}
+</style>
+</head>
+<body>
+<header><nav><b>JUNSEO PARK</b><div><a href="#about">소개</a><a href="#study">학업</a><a href="#skills">관심 분야</a><a href="#contact">연락처</a></div></nav></header>
+<main>
+<div class="hero">
+<span class="tag">국민대학교 경영정보학부</span>
+<h1>안녕하세요,<br>박준서입니다.</h1>
+<p>경영과 정보기술의 접점에서 문제를 발견하고 해결하는 일에 관심을 가진 학생입니다.</p>
+</div>
+
+<section id="about">
+<h2>소개</h2>
+<div class="card"><p>국민대학교 경영정보학부에서 경영학과 IT를 함께 공부하고 있습니다. 데이터를 바탕으로 비즈니스를 이해하고, 기술로 더 나은 의사결정을 돕는 사람이 되는 것이 목표입니다.</p></div>
+</section>
+
+<section id="study">
+<h2>학업</h2>
+<div class="grid">
+<div class="card"><h3>경영</h3><p>조직, 마케팅, 회계 등 비즈니스의 기본 원리를 학습합니다.</p></div>
+<div class="card"><h3>정보시스템</h3><p>데이터베이스, 시스템 분석·설계 등 정보기술의 활용을 배웁니다.</p></div>
+<div class="card"><h3>데이터 분석</h3><p>데이터를 읽고 인사이트를 도출하는 방법을 익힙니다.</p></div>
+</div>
+</section>
+
+<section id="skills">
+<h2>관심 분야</h2>
+<div class="chips"><span>데이터 분석</span><span>IT 기획</span><span>웹 개발</span><span>비즈니스 인텔리전스</span><span>프로젝트 관리</span></div>
+</section>
+
+<section id="contact">
+<h2>연락처</h2>
+<div class="card"><p>이메일: <b>your-email@example.com</b><br>GitHub: <b>github.com/your-id</b></p></div>
+</section>
+</main>
+<footer>© 2026 박준서. All rights reserved.</footer>
+</body>
+</html>
