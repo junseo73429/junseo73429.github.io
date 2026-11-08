@@ -1,2 +1,17 @@
-# Kiro MCP settings (contains secret tokens)
-.kiro/settings/mcp.json
+# Kiro 개인 설정/기록 (공개 저장소에 올리지 않음)
+.kiro/
+
+# Secrets / environment
+.env
+.env.*
+*.key
+*.pem
+
+# Dependencies
+node_modules/
+
+# Netlify local/build artifacts
+.netlify/
+
+# OS / editor noise
+.DS_Store

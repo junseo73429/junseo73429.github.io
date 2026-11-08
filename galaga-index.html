@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galaga MVP — 로그인 · 점수 기록 · 리더보드</title>
+<style>
+:root{--bg:#0f1320;--card:#181d2e;--text:#eef1fa;--sub:#a3acc4;--accent:#7f9bff;--line:#262d45;--ok:#3ecf8e;--err:#ff6b6b;--warn:#ffcf5c}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:"Pretendard","Apple SD Gothic Neo",sans-serif;line-height:1.6;max-width:720px;margin:auto;padding:24px}
+h1{font-size:1.5rem;margin-bottom:4px}
+p.sub{color:var(--sub);font-size:.9rem;margin-bottom:20px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+h2{font-size:1.05rem;margin-bottom:12px;border-left:3px solid var(--accent);padding-left:10px}
+label{display:block;font-size:.85rem;color:var(--sub);margin:8px 0 4px}
+input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0f1320;color:var(--text);font-size:.95rem}
+button{margin-top:12px;padding:10px 16px;border:none;border-radius:8px;background:var(--accent);color:#0b1020;font-weight:600;cursor:pointer;font-size:.95rem}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:transparent;border:1px solid var(--line);color:var(--text)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>div{flex:1;min-width:160px}
+.status{margin-top:10px;font-size:.9rem;min-height:1.2em}
+.status.loading{color:var(--warn)}
+.status.ok{color:var(--ok)}
+.status.err{color:var(--err)}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);font-size:.9rem}
+th{color:var(--sub);font-weight:600}
+.hidden{display:none}
+.note{font-size:.8rem;color:var(--sub);margin-top:8px}
+code{background:#0f1320;padding:2px 6px;border-radius:4px;font-size:.82rem}
+.banner{background:#2a1f12;border:1px solid var(--warn);color:var(--warn);padding:10px 14px;border-radius:8px;font-size:.85rem;margin-bottom:16px}
+</style>
+</head>
+<body>
+<h1>🚀 Galaga MVP</h1>
+<p class="sub">로그인 → 닉네임·점수 저장 → 리더보드 조회 (최소 완성 흐름)</p>
+
+<div id="config-banner" class="banner hidden"></div>
+
+<!-- 로그인 / 회원가입 -->
+<section id="auth-section">
+  <h2>1. 로그인</h2>
+  <label for="email">이메일</label>
+  <input id="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com">
+  <label for="password">비밀번호</label>
+  <input id="password" type="password" autocomplete="current-password" maxlength="72" placeholder="6자 이상">
+  <div class="row">
+    <button id="btn-login" type="button">로그인</button>
+    <button id="btn-signup" type="button" class="secondary">회원가입</button>
+  </div>
+  <div id="auth-status" class="status" role="status" aria-live="polite"></div>
+</section>
+
+<!-- 로그인 후: 점수 저장 -->
+<section id="play-section" class="hidden">
+  <h2>2. 점수 저장</h2>
+  <p class="sub">로그인됨: <span id="who"></span> <button id="btn-logout" type="button" class="secondary" style="margin:0;padding:4px 10px;font-size:.8rem">로그아웃</button></p>
+  <label for="nickname">닉네임 (최대 20자)</label>
+  <input id="nickname" type="text" maxlength="20" placeholder="리더보드에 표시될 이름">
+  <label for="score">점수 (게임 연동 전까지 수동 입력)</label>
+  <input id="score" type="number" min="0" max="10000000" placeholder="예: 1500">
+  <button id="btn-save" type="button">점수 저장</button>
+  <div id="save-status" class="status" role="status" aria-live="polite"></div>
+</section>
+
+<!-- 리더보드 -->
+<section id="board-section">
+  <h2>3. 리더보드</h2>
+  <button id="btn-refresh" type="button" class="secondary">새로고침</button>
+  <div id="board-status" class="status" role="status" aria-live="polite"></div>
+  <table>
+    <thead><tr><th>#</th><th>닉네임</th><th>점수</th><th>스테이지</th></tr></thead>
+    <tbody id="board-body"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2>설정 안내</h2>
+  <p class="note">
+    아래 <code>SUPABASE_URL</code>, <code>SUPABASE_ANON_KEY</code>를 본인 값으로 채워야 로그인이 동작합니다.
+    두 값은 Supabase → Project Settings → API 에서 복사합니다.
+    anon 키는 공개용이라 프론트에 넣어도 안전합니다. (service_role 키는 절대 넣지 마세요 — 그건 Netlify 서버 환경변수 전용입니다.)
+  </p>
+</section>
+
+<!-- Supabase JS (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ====== 설정 (본인 값으로 교체) ======
+const SUPABASE_URL = "https://iikcfondoptroknusaxd.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_XolUoEyNtcVh23dxNpD9_g_HdhagaSI";
+// =====================================
+
+const $ = (id) => document.getElementById(id);
+let supabase = null;
+
+// 설정 안 된 경우 경고 배너 표시 (실패를 성공처럼 숨기지 않음)
+function configReady() {
+  return SUPABASE_URL.startsWith("https://") &&
+         !SUPABASE_URL.includes("YOUR-PROJECT-REF") &&
+         SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
+}
+
+function setStatus(el, kind, msg) {
+  el.className = "status " + kind;      // loading | ok | err
+  el.textContent = msg;                 // textContent → HTML 실행 방지
+}
+
+async function currentSession() {
+  const { data } = await supabase.auth.getSession();
+  return data.session || null;
+}
+
+async function refreshAuthUI() {
+  const session = await currentSession();
+  if (session) {
+    $("auth-section").classList.add("hidden");
+    $("play-section").classList.remove("hidden");
+    $("who").textContent = session.user.email; // textContent
+  } else {
+    $("auth-section").classList.remove("hidden");
+    $("play-section").classList.add("hidden");
+  }
+}
+
+async function doSignup() {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  if (!email || !password) { setStatus($("auth-status"), "err", "이메일과 비밀번호를 입력하세요."); return; }
+  setStatus($("auth-status"), "loading", "회원가입 중…");
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) { setStatus($("auth-status"), "err", "회원가입 실패: " + error.message); return; }
+  setStatus($("auth-status"), "ok", "회원가입 완료. 이메일 인증이 필요할 수 있어요. 그다음 로그인하세요.");
+}
+
+async function doLogin() {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  if (!email || !password) { setStatus($("auth-status"), "err", "이메일과 비밀번호를 입력하세요."); return; }
+  setStatus($("auth-status"), "loading", "로그인 중…");
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) { setStatus($("auth-status"), "err", "로그인 실패: " + error.message); return; }
+  setStatus($("auth-status"), "ok", "로그인 성공");
+  await refreshAuthUI();
+}
+
+async function doLogout() {
+  await supabase.auth.signOut();
+  await refreshAuthUI();
+  setStatus($("auth-status"), "ok", "로그아웃됨");
+}
+
+async function doSave() {
+  const nickname = $("nickname").value.trim();
+  const scoreStr = $("score").value.trim();
+  // 클라이언트 1차 검증 (서버가 다시 검증함)
+  if (!nickname) { setStatus($("save-status"), "err", "닉네임을 입력하세요."); return; }
+  if (nickname.length > 20) { setStatus($("save-status"), "err", "닉네임은 20자 이하여야 합니다."); return; }
+  if (scoreStr === "") { setStatus($("save-status"), "err", "점수를 입력하세요."); return; }
+  const score = Number(scoreStr);
+  if (!Number.isInteger(score) || score < 0) { setStatus($("save-status"), "err", "점수는 0 이상의 정수여야 합니다."); return; }
+
+  const session = await currentSession();
+  if (!session) { setStatus($("save-status"), "err", "세션이 만료됐습니다. 다시 로그인하세요."); await refreshAuthUI(); return; }
+
+  $("btn-save").disabled = true;
+  setStatus($("save-status"), "loading", "저장 중…");
+  try {
+    const res = await fetch("/api/save-score", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + session.access_token, // 실제 세션 토큰 → 서버 검증
+      },
+      body: JSON.stringify({ nickname, score, stage: 1 }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      // 실패를 성공처럼 표시하지 않음
+      setStatus($("save-status"), "err", "저장 실패: " + (data.error || res.status));
+      return;
+    }
+    setStatus($("save-status"), "ok", "저장 완료. 리더보드를 갱신합니다…");
+    await loadBoard();
+  } catch (e) {
+    setStatus($("save-status"), "err", "네트워크 오류로 저장하지 못했습니다.");
+  } finally {
+    $("btn-save").disabled = false;
+  }
+}
+
+async function loadBoard() {
+  setStatus($("board-status"), "loading", "불러오는 중…");
+  const body = $("board-body");
+  body.textContent = ""; // 초기화
+  try {
+    const res = await fetch("/api/leaderboard?top=20");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setStatus($("board-status"), "err", "조회 실패: " + (data.error || res.status)); return; }
+    const rows = data.leaderboard || [];
+    if (rows.length === 0) { setStatus($("board-status"), "ok", "아직 기록이 없습니다."); return; }
+    rows.forEach((r, i) => {
+      const tr = document.createElement("tr");
+      // 모든 값은 textContent 로 삽입 → HTML 실행 불가
+      const cells = [String(i + 1), r.nickname, String(r.score), String(r.stage)];
+      cells.forEach((text) => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+    setStatus($("board-status"), "ok", `상위 ${rows.length}명 표시`);
+  } catch (e) {
+    setStatus($("board-status"), "err", "네트워크 오류로 불러오지 못했습니다.");
+  }
+}
+
+// 초기화
+(function init() {
+  // 1) 버튼 이벤트는 '항상 먼저' 연결한다 (초기화가 실패해도 클릭은 반응하게)
+  $("btn-login").addEventListener("click", onLogin);
+  $("btn-signup").addEventListener("click", onSignup);
+  $("btn-logout").addEventListener("click", () => supabase && doLogout());
+  $("btn-save").addEventListener("click", doSave);
+  $("btn-refresh").addEventListener("click", loadBoard);
+
+  const banner = $("config-banner");
+
+  // 2) 설정 값 확인
+  if (!configReady()) {
+    banner.classList.remove("hidden");
+    banner.textContent = "⚠️ SUPABASE_URL / SUPABASE_ANON_KEY 가 설정되지 않았습니다.";
+    return;
+  }
+
+  // 3) Supabase CDN 로드 확인
+  if (!window.supabase || !window.supabase.createClient) {
+    banner.classList.remove("hidden");
+    banner.textContent = "⚠️ Supabase 라이브러리를 불러오지 못했습니다. 네트워크/광고차단을 확인하세요.";
+    return;
+  }
+
+  // 4) 클라이언트 생성 (실패 시 화면에 표시)
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    banner.classList.remove("hidden");
+    banner.textContent = "⚠️ Supabase 초기화 실패: " + (e && e.message ? e.message : e);
+    return;
+  }
+
+  refreshAuthUI();
+  loadBoard(); // 리더보드는 로그인 없이도 조회
+})();
+
+function onLogin() {
+  if (!supabase) { setStatus($("auth-status"), "err", "Supabase가 초기화되지 않았습니다. 상단 경고를 확인하세요."); return; }
+  doLogin();
+}
+function onSignup() {
+  if (!supabase) { setStatus($("auth-status"), "err", "Supabase가 초기화되지 않았습니다. 상단 경고를 확인하세요."); return; }
+  doSignup();
+}
+</script>
+</body>
+</html>

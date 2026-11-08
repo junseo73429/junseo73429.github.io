@@ -1,0 +1,45 @@
+# Netlify 배포 설정
+# - 정적 HTML/CSS/JS/이미지를 그대로 서빙 (빌드 도구/프레임워크 미도입)
+# - GitHub Pages(루트 index.html)와 공존: 기존 파일을 수정하지 않음
+# - 서버 함수는 netlify/functions 에 분리 (공개 publish 폴더에 복사하지 않음)
+
+[build]
+  # 빌드 산출물 없음: 루트를 그대로 공개
+  publish = "."
+  # 빌드 단계가 필요 없으므로 명령을 두지 않음 (정적 파일)
+  command = ""
+  # 서버 함수 디렉토리 (공개 폴더와 분리됨)
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# 공개 산출물에서 제외할 경로 (추가 안전장치)
+# .git, node_modules 는 Netlify가 기본 무시. 아래는 명시적 차단.
+[build.processing]
+  skip_processing = false
+
+# Supabase 호출 등 서버 로직은 /api/* 로 라우팅 → 함수로 연결
+[[redirects]]
+  from = "/api/save-score"
+  to = "/.netlify/functions/save-score"
+  status = 200
+
+[[redirects]]
+  from = "/api/leaderboard"
+  to = "/.netlify/functions/leaderboard"
+  status = 200
+
+# 기본 보안 헤더
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# 민감/내부 경로는 배포돼도 접근 차단 (방어적)
+[[headers]]
+  for = "/.kiro/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
