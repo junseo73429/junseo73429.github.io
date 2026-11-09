@@ -32,7 +32,7 @@ footer{text-align:center;color:var(--sub);font-size:.85rem;padding:24px}
 </style>
 </head>
 <body>
-<header><nav><b>JUNSEO PARK</b><div><a href="#about">소개</a><a href="#study">학업</a><a href="#skills">관심 분야</a><a href="#contact">연락처</a></div></nav></header>
+<header><nav><b>JUNSEO PARK</b><div><a href="#about">소개</a><a href="#study">학업</a><a href="#skills">관심 분야</a><a href="#cheer">응원</a><a href="#contact">연락처</a></div></nav></header>
 <main>
 <div class="hero">
 <span class="tag">국민대학교 경영정보학부</span>
@@ -59,11 +59,74 @@ footer{text-align:center;color:var(--sub);font-size:.85rem;padding:24px}
 <div class="chips"><span>데이터 분석</span><span>IT 기획</span><span>웹 개발</span><span>비즈니스 인텔리전스</span><span>프로젝트 관리</span></div>
 </section>
 
+<section id="cheer">
+<h2>작품 응원 보드</h2>
+<p style="color:var(--sub);font-size:.95rem;margin-bottom:14px">마음에 드는 작품에 응원을 눌러주세요. 숫자는 누적 응원 횟수입니다 (중복 참여 가능).</p>
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div><h3>🌃 야경 사진</h3><p>도시의 밤을 담은 사진</p></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="cheer-count" id="count-photo-night" style="font-weight:700;color:var(--accent);min-width:48px;text-align:right">—</span>
+      <button type="button" class="cheer-btn" data-item="photo-night" style="padding:9px 16px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer">응원하기</button>
+    </div>
+  </div>
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div><h3>🎞️ 짧은 애니메이션</h3><p>30초짜리 손그림 애니메이션</p></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="cheer-count" id="count-animation-short" style="font-weight:700;color:var(--accent);min-width:48px;text-align:right">—</span>
+      <button type="button" class="cheer-btn" data-item="animation-short" style="padding:9px 16px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer">응원하기</button>
+    </div>
+  </div>
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div><h3>🖼️ 포스터</h3><p>전시회 홍보 포스터</p></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="cheer-count" id="count-poster" style="font-weight:700;color:var(--accent);min-width:48px;text-align:right">—</span>
+      <button type="button" class="cheer-btn" data-item="poster" style="padding:9px 16px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer">응원하기</button>
+    </div>
+  </div>
+</div>
+<p id="cheer-status" role="status" aria-live="polite" style="margin-top:12px;font-size:.92rem;min-height:1.2em"></p>
+</section>
+
 <section id="contact">
 <h2>연락처</h2>
 <div class="card"><p>GitHub: <a href="https://github.com/junseo73429"><b>github.com/junseo73429</b></a></p></div>
 </section>
 </main>
 <footer>© 2026 박준서. All rights reserved.</footer>
+<script>
+(function(){
+  const statusEl = document.getElementById("cheer-status");
+  function setStatus(color, msg){ statusEl.style.color = color; statusEl.textContent = msg; }
+  function render(counts){
+    Object.keys(counts).forEach(function(id){
+      const el = document.getElementById("count-" + id);
+      if (el) el.textContent = counts[id] + "회";
+    });
+  }
+  async function load(){
+    try{
+      const res = await fetch("/api/cheer");
+      const data = await res.json().catch(function(){return {};});
+      if(!res.ok || !data.ok){ setStatus("#ff6b6b", "집계를 불러오지 못했습니다: " + (data.error||res.status)); return; }
+      render(data.counts); setStatus("", "");
+    }catch(e){ setStatus("#ff6b6b", "네트워크 오류로 집계를 불러오지 못했습니다."); }
+  }
+  async function cheer(itemId, btn){
+    btn.disabled = true; setStatus("#c7922b", "응원을 저장하는 중…");
+    try{
+      const res = await fetch("/api/cheer", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ item_id: itemId }) });
+      const data = await res.json().catch(function(){return {};});
+      if(!res.ok || !data.ok){ setStatus("#ff6b6b", "저장 실패: " + (data.error||res.status)); return; }
+      render(data.counts); setStatus("#2e9e63", "응원이 저장되었습니다!");
+    }catch(e){ setStatus("#ff6b6b", "네트워크 오류로 저장하지 못했습니다."); }
+    finally{ btn.disabled = false; }
+  }
+  document.querySelectorAll(".cheer-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){ cheer(btn.dataset.item, btn); });
+  });
+  load();
+})();
+</script>
 </body>
 </html>
