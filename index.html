@@ -5,11 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>박준서 | 국민대학교 경영정보학부</title>
 <style>
-:root{--bg:#f7f8fc;--card:#fff;--text:#1c2333;--sub:#5b6478;--accent:#2f5bea;--accent2:#7b5cff;--line:#e3e7f1;--track:#edf0f8}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1017;--card:#161b28;--text:#eef1fa;--sub:#a3acc4;--accent:#7f9bff;--accent2:#a98bff;--line:#262d45;--track:#222a3f}}
-:root[data-theme="dark"]{--bg:#0d1017;--card:#161b28;--text:#eef1fa;--sub:#a3acc4;--accent:#7f9bff;--accent2:#a98bff;--line:#262d45;--track:#222a3f}
+:root{
+  --bg:#fef9f6;        /* 따뜻하고 밝은 배경 */
+  --bg2:#fff4ef;
+  --card:#ffffff;
+  --text:#2a2f45;
+  --sub:#6b7391;
+  --accent:#ff7a59;    /* 산호빛 포인트 */
+  --accent2:#ffb347;   /* 밝은 주황-노랑 */
+  --line:#f0e6df;
+  --track:#f3ece6;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.7}
+body{background:linear-gradient(180deg,var(--bg2),var(--bg) 320px);color:var(--text);font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.7}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 
@@ -242,7 +250,11 @@ footer{border-top:1px solid var(--line);text-align:center;color:var(--sub);font-
   <!-- CONTACT -->
   <section id="contact">
     <div class="sec-head"><h2>연락처</h2><span class="en">Contact</span></div>
-    <div class="grid c2">
+    <div class="grid c3">
+      <div class="card">
+        <h3>✉️ 이메일</h3>
+        <p><a href="mailto:greenishardy@kookmin.ac.kr">greenishardy@kookmin.ac.kr</a></p>
+      </div>
       <div class="card">
         <h3>🔗 GitHub</h3>
         <p><a href="https://github.com/junseo73429" target="_blank" rel="noopener">github.com/junseo73429</a></p>
