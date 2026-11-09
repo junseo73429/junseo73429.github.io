@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>작품 응원 보드</title>
+<style>
+:root{--bg:#0f1320;--card:#181d2e;--text:#eef1fa;--sub:#a3acc4;--accent:#7f9bff;--line:#262d45;--ok:#3ecf8e;--err:#ff6b6b;--warn:#ffcf5c}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:"Pretendard","Apple SD Gothic Neo",sans-serif;line-height:1.6;max-width:720px;margin:auto;padding:24px}
+h1{font-size:1.6rem;margin-bottom:4px}
+p.sub{color:var(--sub);font-size:.92rem;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.card .info h3{font-size:1.1rem;margin-bottom:4px}
+.card .info p{color:var(--sub);font-size:.85rem}
+.count{font-size:1.1rem;font-weight:700;color:var(--accent);min-width:70px;text-align:right}
+button{padding:10px 18px;border:none;border-radius:8px;background:var(--accent);color:#0b1020;font-weight:700;cursor:pointer;font-size:.95rem;white-space:nowrap}
+button:disabled{opacity:.5;cursor:not-allowed}
+.right{display:flex;align-items:center;gap:14px}
+.status{margin-top:18px;font-size:.92rem;min-height:1.3em;text-align:center}
+.status.loading{color:var(--warn)}
+.status.ok{color:var(--ok)}
+.status.err{color:var(--err)}
+.foot{color:var(--sub);font-size:.8rem;text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<h1>🎨 작품 응원 보드</h1>
+<p class="sub">마음에 드는 작품에 응원을 눌러주세요. 숫자는 누적 응원 횟수입니다 (중복 참여 가능).</p>
+
+<div class="card">
+  <div class="info">
+    <h3>🌃 야경 사진</h3>
+    <p>도시의 밤을 담은 사진</p>
+  </div>
+  <div class="right">
+    <span class="count" id="count-photo-night">—</span>
+    <button type="button" data-item="photo-night">응원하기</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="info">
+    <h3>🎞️ 짧은 애니메이션</h3>
+    <p>30초짜리 손그림 애니메이션</p>
+  </div>
+  <div class="right">
+    <span class="count" id="count-animation-short">—</span>
+    <button type="button" data-item="animation-short">응원하기</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="info">
+    <h3>🖼️ 포스터</h3>
+    <p>전시회 홍보 포스터</p>
+  </div>
+  <div class="right">
+    <span class="count" id="count-poster">—</span>
+    <button type="button" data-item="poster">응원하기</button>
+  </div>
+</div>
+
+<div class="status" id="status" role="status" aria-live="polite"></div>
+<p class="foot">응원 기록은 서버(Supabase)에 저장되어 다른 기기에서도 같은 집계가 보입니다.</p>
+
+<script>
+const statusEl = document.getElementById("status");
+
+function setStatus(kind, msg) {
+  statusEl.className = "status " + kind;   // loading | ok | err | ""
+  statusEl.textContent = msg;              // textContent → HTML 실행 방지
+}
+
+function renderCounts(counts) {
+  // 서버가 준 집계만 신뢰해서 표시 (화면에 임의 숫자 쓰지 않음)
+  Object.keys(counts).forEach((id) => {
+    const el = document.getElementById("count-" + id);
+    if (el) el.textContent = counts[id] + "회";
+  });
+}
+
+async function loadCounts() {
+  setStatus("loading", "집계를 불러오는 중…");
+  try {
+    const res = await fetch("/api/cheer");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      setStatus("err", "집계를 불러오지 못했습니다: " + (data.error || res.status));
+      return;
+    }
+    renderCounts(data.counts);
+    setStatus("", "");
+  } catch {
+    setStatus("err", "네트워크 오류로 집계를 불러오지 못했습니다.");
+  }
+}
+
+async function cheer(itemId, button) {
+  button.disabled = true;
+  setStatus("loading", "응원을 저장하는 중…");
+  try {
+    const res = await fetch("/api/cheer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ item_id: itemId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      // 실패를 성공처럼 표시하지 않음
+      setStatus("err", "저장 실패: " + (data.error || res.status));
+      return;
+    }
+    renderCounts(data.counts);     // 서버가 돌려준 최신 집계로 갱신
+    setStatus("ok", "응원이 저장되었습니다!");
+  } catch {
+    setStatus("err", "네트워크 오류로 저장하지 못했습니다.");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.querySelectorAll("button[data-item]").forEach((btn) => {
+  btn.addEventListener("click", () => cheer(btn.dataset.item, btn));
+});
+
+loadCounts(); // 처음 열 때 집계 로드
+</script>
+</body>
+</html>
