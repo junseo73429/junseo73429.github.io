@@ -105,6 +105,7 @@ footer{border-top:1px solid var(--line);text-align:center;color:var(--sub);font-
     <a href="#skills">역량</a>
     <a href="#timeline">여정</a>
     <a href="#cheer">응원</a>
+    <a href="#guestbook">방명록</a>
     <a href="#contact">연락처</a>
   </div>
 </nav></header>
@@ -264,6 +265,21 @@ footer{border-top:1px solid var(--line);text-align:center;color:var(--sub);font-
     </div>
   </section>
 
+  <!-- GUESTBOOK -->
+  <section id="guestbook">
+    <div class="sec-head"><h2>방명록</h2><span class="en">Guestbook</span></div>
+    <p style="color:var(--sub);margin-bottom:16px">짧은 응원이나 인사를 남겨주세요. 별명 2~12자, 메시지 1~100자. 남긴 글은 서버에 저장되어 다른 기기에서도 보입니다.</p>
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <input id="gb-nick" type="text" maxlength="12" placeholder="별명 (2~12자)" style="flex:0 0 160px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)">
+        <input id="gb-msg" type="text" maxlength="100" placeholder="한 줄 메시지 (1~100자)" style="flex:1;min-width:180px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)">
+        <button type="button" id="gb-submit" class="cheer-btn">등록</button>
+      </div>
+      <div id="gb-status" role="status" aria-live="polite" style="min-height:1.2em;font-size:.9rem"></div>
+    </div>
+    <div id="gb-list" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+
   <!-- CONTACT -->
   <section id="contact">
     <div class="sec-head"><h2>연락처</h2><span class="en">Contact</span></div>
@@ -334,6 +350,85 @@ footer{border-top:1px solid var(--line);text-align:center;color:var(--sub);font-
     btn.addEventListener("click", function(){ cheer(btn.dataset.item, btn); });
   });
   load();
+})();
+
+// ===== 방명록 =====
+(function(){
+  const nickEl = document.getElementById("gb-nick");
+  const msgEl = document.getElementById("gb-msg");
+  const btn = document.getElementById("gb-submit");
+  const statusEl = document.getElementById("gb-status");
+  const listEl = document.getElementById("gb-list");
+  if(!btn) return;
+
+  function setStatus(color, text){ statusEl.style.color = color; statusEl.textContent = text; }
+
+  function fmt(iso){
+    try{ const d = new Date(iso); return d.toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}); }
+    catch(e){ return ""; }
+  }
+
+  function render(entries){
+    listEl.textContent = "";  // 초기화
+    if(!entries || entries.length === 0){
+      const p = document.createElement("p");
+      p.style.color = "var(--sub)"; p.style.fontSize = ".9rem";
+      p.textContent = "아직 글이 없습니다. 첫 글을 남겨보세요.";
+      listEl.appendChild(p);
+      return;
+    }
+    entries.forEach(function(e){
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.padding = "14px 18px";
+      const head = document.createElement("div");
+      head.style.display = "flex"; head.style.justifyContent = "space-between"; head.style.gap = "10px";
+      const nick = document.createElement("b");
+      nick.textContent = e.nickname;              // textContent → HTML 실행 방지
+      const time = document.createElement("span");
+      time.style.color = "var(--sub)"; time.style.fontSize = ".8rem";
+      time.textContent = fmt(e.created_at);
+      head.appendChild(nick); head.appendChild(time);
+      const msg = document.createElement("p");
+      msg.style.marginTop = "4px"; msg.style.color = "var(--text)";
+      msg.textContent = e.message;                // textContent → HTML 실행 방지
+      card.appendChild(head); card.appendChild(msg);
+      listEl.appendChild(card);
+    });
+  }
+
+  async function loadGb(){
+    setStatus("var(--sub)", "불러오는 중…");
+    try{
+      const res = await fetch("/api/guestbook");
+      const data = await res.json().catch(function(){return {};});
+      if(!res.ok || !data.ok){ setStatus("#d14343", "불러오지 못했습니다: " + (data.error||res.status)); return; }
+      render(data.entries); setStatus("", "");
+    }catch(e){ setStatus("#d14343", "네트워크 오류로 불러오지 못했습니다."); }
+  }
+
+  async function submit(){
+    const nickname = nickEl.value.trim();
+    const message = msgEl.value.trim();
+    if(nickname.length < 2 || nickname.length > 12){ setStatus("#d14343", "별명은 2~12자여야 합니다."); return; }
+    if(message.length < 1 || message.length > 100){ setStatus("#d14343", "메시지는 1~100자여야 합니다."); return; }
+    btn.disabled = true; setStatus("#c7922b", "등록 중…");
+    try{
+      const res = await fetch("/api/guestbook", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ nickname: nickname, message: message })
+      });
+      const data = await res.json().catch(function(){return {};});
+      if(!res.ok || !data.ok){ setStatus("#d14343", "등록 실패: " + (data.error||res.status)); return; }
+      msgEl.value = "";
+      render(data.entries); setStatus("#2e9e63", "방명록에 등록되었습니다!");
+    }catch(e){ setStatus("#d14343", "네트워크 오류로 등록하지 못했습니다."); }
+    finally{ btn.disabled = false; }
+  }
+
+  btn.addEventListener("click", submit);
+  msgEl.addEventListener("keydown", function(ev){ if(ev.key === "Enter") submit(); });
+  loadGb();
 })();
 </script>
 </body>

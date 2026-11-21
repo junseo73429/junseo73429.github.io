@@ -35,6 +35,11 @@
   to = "/.netlify/functions/cheer"
   status = 200
 
+[[redirects]]
+  from = "/api/guestbook"
+  to = "/.netlify/functions/guestbook"
+  status = 200
+
 # 기본 보안 헤더
 [[headers]]
   for = "/*"
